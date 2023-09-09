@@ -41,3 +41,20 @@ exports.createPost=(req,res,next)=>{
             return next(error);
         })
 }
+
+exports.getPost=(req,res,next)=>{
+    const postId = req.params.postId;
+    Post.findById(postId)
+        .then((post)=>{
+            res.status(200).json({
+                message:"post fetched successfully",
+                post:post,
+            })
+        })
+        .catch((err)=>{
+            console.log(err);
+            const error = new Error("can't fetch single post from db");
+            error.httpStatusCode=500;
+            return next(error);
+        })
+}
