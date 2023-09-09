@@ -20,7 +20,8 @@ exports.createPost=(req,res,next)=>{
     const creator = {
         name:"ilyes",
     };
-    const imageUrl = "images/book.png";
+    const imageUrl = req.file.path.replace(/\\/g, '/');
+    console.log(req.file.path);
     const post = new Post({
         title:title,
         content:content,

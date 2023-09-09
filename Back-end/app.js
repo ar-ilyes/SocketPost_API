@@ -1,6 +1,7 @@
 const express = require('express');
 const path=require("path");
 const bodyParser = require("body-parser");
+const multer = require("multer");
 const { default: mongoose } = require('mongoose');
 require("dotenv").config();
 
@@ -10,6 +11,23 @@ const app = express();
 
 app.use(bodyParser.json());
 
+const fileStorage = multer.diskStorage({
+    destination:(req,file,cb)=>{
+        cb(null,'images')
+    },
+    filename:(req,file,cb)=>{
+        cb(null,new Date().toISOString().replace(/:/g, '-')+'-'+file.originalname);
+    }
+});
+
+const fileFilter = (req,file,cb)=>{
+    if(file.mimetype === "image/png" || file.mimetype === "image/jpg" || file.mimetype === "image/jpeg" ){
+        cb(null,true);
+    }else{
+        cb(null,false);
+    }
+}
+
 app.use((req,res,next)=>{
     res.setHeader("Access-Control-Allow-Origin","*");
     res.setHeader("Access-Control-Allow-Methods","GET, POST, PUT, PATCH, DELETE");
@@ -17,12 +35,17 @@ app.use((req,res,next)=>{
     next();
 })
 
+app.use(multer({storage:fileStorage,fileFilter:fileFilter}).single("image"));
+
 app.use("/images",express.static(path.join(__dirname,"images")))
+
+
 
 app.use(feedRouter);
 
 app.use((err,req,res,next)=>{
-    res.status(err.httpStatusCode).json({
+    const status = err.httpStatusCode || 500;
+    res.status(status).json({
         message:err.message,
     })
 })
