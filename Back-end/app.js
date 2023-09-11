@@ -6,6 +6,7 @@ const { default: mongoose } = require('mongoose');
 require("dotenv").config();
 
 const feedRouter=require("./routes/feed");
+const authRouter = require("./routes/auth");
 
 const app = express();
 
@@ -42,11 +43,13 @@ app.use("/images",express.static(path.join(__dirname,"images")))
 
 
 app.use(feedRouter);
+app.use(authRouter);
 
 app.use((err,req,res,next)=>{
     const status = err.httpStatusCode || 500;
     res.status(status).json({
         message:err.message,
+        data:err.data,
     })
 })
 

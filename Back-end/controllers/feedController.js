@@ -1,4 +1,5 @@
 const Post = require("../models/post");
+const {validationResult} = require("express-validator")
 exports.getPosts=(req,res,next)=>{
     Post.find()
         .then((posts)=>{
@@ -15,13 +16,24 @@ exports.getPosts=(req,res,next)=>{
         })
 }
 exports.createPost=(req,res,next)=>{
+    const errors = validationResult(req);
+    if(!errors.isEmpty()){
+        const err=new Error("the values you've entered are not allowed");
+        err.httpStatusCode=400;
+        throw err;
+    }
     const title = req.body.title;
     const content = req.body.content;
     const creator = {
         name:"ilyes",
     };
-    const imageUrl = req.file.path.replace(/\\/g, '/');
-    console.log(req.file.path);
+    const image = req.file;
+    if(!image){
+        const err=new Error("you need to enter a valid image");
+        err.httpStatusCode=400;
+        throw err;
+    }
+    const imageUrl = image.path.replace(/\\/g, '/');///!!!!! the replace here must be used if we are using windows in our server 
     const post = new Post({
         title:title,
         content:content,
