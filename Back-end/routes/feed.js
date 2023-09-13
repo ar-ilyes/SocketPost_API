@@ -11,4 +11,6 @@ router.post("/posts",isAuth,[body("title").isLength({min:5}),body("content").isL
 
 router.get('/posts/:postId',isAuth,feedController.getPost);
 
+router.delete("/posts/:postId",isAuth,feedController.deletePosts);
+
 module.exports=router;

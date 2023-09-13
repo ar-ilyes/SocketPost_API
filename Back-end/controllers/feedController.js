@@ -1,7 +1,11 @@
 const Post = require("../models/post");
-const {validationResult} = require("express-validator")
+const {validationResult} = require("express-validator");
+const fs = require("fs");
+const path = require("path");
+const User =require('../models/user');
+
 exports.getPosts=(req,res,next)=>{
-    Post.find()
+    Post.find().populate("creator").exec()
         .then((posts)=>{
             res.status(200).json({
                 message:"posts fetched successfully",
@@ -24,9 +28,7 @@ exports.createPost=(req,res,next)=>{
     }
     const title = req.body.title;
     const content = req.body.content;
-    const creator = {
-        name:"ilyes",
-    };
+    const creator = req.userId;
     const image = req.file;
     if(!image){
         const err=new Error("you need to enter a valid image");
@@ -40,11 +42,23 @@ exports.createPost=(req,res,next)=>{
         creator:creator,
         imageUrl:imageUrl,
     });
+    let storedPost;
     post.save()
         .then((post)=>{
+            storedPost=post;
+            return User.findById(req.userId);
+            
+        }).then((user)=>{
+            if(!user){
+                throw new Error("no user found!!!");
+            }
+            user.posts.push(storedPost._id);
+            return user.save();
+        })
+        .then((user)=>{
             res.status(201).json({
                 message:"post created successfully",
-                post:post,
+                post:storedPost,
             })
         })
         .catch((err)=>{
@@ -57,7 +71,7 @@ exports.createPost=(req,res,next)=>{
 
 exports.getPost=(req,res,next)=>{
     const postId = req.params.postId;
-    Post.findById(postId)
+    Post.findById(postId).populate("creator").exec()
         .then((post)=>{
             res.status(200).json({
                 message:"post fetched successfully",
@@ -70,4 +84,53 @@ exports.getPost=(req,res,next)=>{
             error.httpStatusCode=500;
             return next(error);
         })
+}
+
+exports.deletePosts = (req,res,next)=>{
+    let postId = req.params.postId;
+    //chercher le post extraire le chemin de la photo et l'effacer
+    //effacer le post
+    //effacer le post de user.posts
+    let deletedPost;
+    Post.findById(postId)
+        .then((post)=>{
+            if(!post){
+                throw new Error("can't find this post");
+            }
+            clearPicture(post.imageUrl);
+            return Post.deleteOne({_id:postId});
+        })
+        .then((post)=>{
+            deletedPost=post;
+            return User.findById(req.userId);
+        })
+        .then((user)=>{
+            let userPosts = user.posts.filter((val,ind)=>{
+                return val.toString() !== postId.toString();
+            })
+            user.posts=userPosts;
+            return user.save();
+        })
+        .then((user)=>{
+            res.status(200).json({
+                message: "the post was deleted successfully",
+                post:deletedPost,
+            })
+        })
+        .catch((err)=>{
+            console.log(err);
+            err.httpStatusCode=500;
+            return next(err);
+        })
+}
+
+const clearPicture=(imageUrl)=>{
+    let imagePath=path.join(__dirname,'..',imageUrl);
+    fs.unlink(imagePath,(error)=>{
+        if(error){
+            console.log(error);
+            error.httpStatusCode=500;
+            throw error;
+        }
+    })
 }
