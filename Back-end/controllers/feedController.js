@@ -107,6 +107,11 @@ exports.editPost =(req,res,next)=>{
     }
     Post.findById(postId)
         .then((post)=>{
+            if(post.creator.toString()!==req.userId.toString()){
+                let err = new Error("not Authorized");
+                err.httpStatusCode=401;
+                throw err;
+            }
             if(post.imageUrl!==imageUrl){
                 clearPicture(post.imageUrl);
             }
@@ -123,9 +128,7 @@ exports.editPost =(req,res,next)=>{
         })
         .catch((err)=>{
             console.log(err);
-            const error = new Error("can't edit the post");
-            error.httpStatusCode=500;
-            return next(error);
+            return next(err);
         })
 }
 
@@ -137,6 +140,11 @@ exports.deletePosts = (req,res,next)=>{
     let deletedPost;
     Post.findById(postId)
         .then((post)=>{
+            if(post.creator.toString()!==req.userId.toString()){
+                let err = new Error("not Authorized");
+                err.httpStatusCode=401;
+                throw err;
+            }
             if(!post){
                 throw new Error("can't find this post");
             }
@@ -162,7 +170,6 @@ exports.deletePosts = (req,res,next)=>{
         })
         .catch((err)=>{
             console.log(err);
-            err.httpStatusCode=500;
             return next(err);
         })
 }
