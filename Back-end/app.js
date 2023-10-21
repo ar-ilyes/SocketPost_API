@@ -3,6 +3,7 @@ const path=require("path");
 const bodyParser = require("body-parser");
 const multer = require("multer");
 const { default: mongoose } = require('mongoose');
+const io = require("./util/socket");
 require("dotenv").config();
 
 const feedRouter=require("./routes/feed");
@@ -54,8 +55,17 @@ app.use((err,req,res,next)=>{
 })
 
 mongoose.connect(process.env.MONGO_URI).then(()=>{
-    app.listen(8080,()=>{
+    const server = app.listen(8080,()=>{
         console.log("start listening ");
+    });
+    // const io = require("./socket")(server);
+    // io.on("connection",(socket)=>{
+    //     console.log("client connected");
+    // })
+    io.init(server);
+    let socket = io.getIO();
+    socket.on("connection",(socket)=>{
+        console.log("client connected");
     })
 }).catch((err)=>{
     console.log(err);
